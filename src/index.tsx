@@ -657,35 +657,40 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     call(this.autoscrollParams, this.autoscroll)
   );
 
-  onScroll = event([
-    {
-      nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
-        block([
-          set(
-            this.scrollOffset,
-            this.props.horizontal ? contentOffset.x : contentOffset.y
-          ),
-          cond(
-            and(
-              this.isAutoscrolling.native,
-              or(
-                lessOrEq(
-                  abs(sub(this.targetScrollOffset, this.scrollOffset)),
-                  scrollPositionTolerance
-                ),
-                this.isScrolledUp,
-                this.isScrolledDown
-              )
+  onScroll = event(
+    [
+      {
+        nativeEvent: ({ contentOffset }: NativeScrollEvent) =>
+          block([
+            set(
+              this.scrollOffset,
+              this.props.horizontal ? contentOffset.x : contentOffset.y
             ),
-            [
-              set(this.isAutoscrolling.native, 0),
-              this.checkAutoscroll,
-              call(this.autoscrollParams, this.onAutoscrollComplete)
-            ]
-          )
-        ])
+            cond(
+              and(
+                this.isAutoscrolling.native,
+                or(
+                  lessOrEq(
+                    abs(sub(this.targetScrollOffset, this.scrollOffset)),
+                    scrollPositionTolerance
+                  ),
+                  this.isScrolledUp,
+                  this.isScrolledDown
+                )
+              ),
+              [
+                set(this.isAutoscrolling.native, 0),
+                this.checkAutoscroll,
+                call(this.autoscrollParams, this.onAutoscrollComplete)
+              ]
+            )
+          ])
+      }
+    ],
+    {
+      useNativeDriver: true
     }
-  ]);
+  );
 
   onGestureRelease = [
     cond(
@@ -703,53 +708,64 @@ class DraggableFlatList<T> extends React.Component<Props<T>, State> {
     )
   ];
 
-  onPanStateChange = event([
-    {
-      nativeEvent: ({
-        state,
-        x,
-        y
-      }: GestureHandlerGestureEventNativeEvent & PanGestureHandlerEventExtra) =>
-        cond(and(neq(state, this.panGestureState), not(this.disabled)), [
-          set(this.panGestureState, state),
-          cond(
-            eq(this.panGestureState, GestureState.ACTIVE),
-            set(
-              this.activationDistance,
-              sub(this.touchAbsolute, this.props.horizontal ? x : y)
-            )
-          ),
-          cond(
-            or(
-              eq(state, GestureState.END),
-              eq(state, GestureState.CANCELLED),
-              eq(state, GestureState.FAILED)
+  onPanStateChange = event(
+    [
+      {
+        nativeEvent: ({
+          state,
+          x,
+          y
+        }: GestureHandlerGestureEventNativeEvent &
+          PanGestureHandlerEventExtra) =>
+          cond(and(neq(state, this.panGestureState), not(this.disabled)), [
+            set(this.panGestureState, state),
+            cond(
+              eq(this.panGestureState, GestureState.ACTIVE),
+              set(
+                this.activationDistance,
+                sub(this.touchAbsolute, this.props.horizontal ? x : y)
+              )
             ),
-            this.onGestureRelease
-          )
-        ])
-    }
-  ]);
-
-  onPanGestureEvent = event([
-    {
-      nativeEvent: ({ x, y }: PanGestureHandlerEventExtra) =>
-        cond(
-          and(
-            this.isHovering,
-            eq(this.panGestureState, GestureState.ACTIVE),
-            not(this.disabled)
-          ),
-          [
-            cond(not(this.hasMoved), set(this.hasMoved, 1)),
-            set(
-              this.touchAbsolute,
-              add(this.props.horizontal ? x : y, this.activationDistance)
+            cond(
+              or(
+                eq(state, GestureState.END),
+                eq(state, GestureState.CANCELLED),
+                eq(state, GestureState.FAILED)
+              ),
+              this.onGestureRelease
             )
-          ]
-        )
+          ])
+      }
+    ],
+    {
+      useNativeDriver: true
     }
-  ]);
+  );
+
+  onPanGestureEvent = event(
+    [
+      {
+        nativeEvent: ({ x, y }: PanGestureHandlerEventExtra) =>
+          cond(
+            and(
+              this.isHovering,
+              eq(this.panGestureState, GestureState.ACTIVE),
+              not(this.disabled)
+            ),
+            [
+              cond(not(this.hasMoved), set(this.hasMoved, 1)),
+              set(
+                this.touchAbsolute,
+                add(this.props.horizontal ? x : y, this.activationDistance)
+              )
+            ]
+          )
+      }
+    ],
+    {
+      useNativeDriver: true
+    }
+  );
 
   hoverComponentTranslate = cond(
     clockRunning(this.hoverClock),
